@@ -1,11 +1,11 @@
 import java.math.BigInteger;
 import java.util.*;
 
-import jdk.nashorn.internal.objects.annotations.Where;
 import org.neodatis.odb.*;
 import org.neodatis.odb.Objects;
 import org.neodatis.odb.core.query.IQuery;
 import org.neodatis.odb.core.query.criteria.ICriterion;
+import org.neodatis.odb.core.query.criteria.Where;
 import org.neodatis.odb.impl.core.query.criteria.CriteriaQuery;
 import org.neodatis.odb.impl.core.query.values.ValuesCriteriaQuery;
 
@@ -118,12 +118,20 @@ public class Neo_Gand {
         }
 
         Objects<Persona> objects = odb.getObjects(Persona.class);
-        System.out.println(objects.size() + "Personas: ");
+        System.out.println("\n" + objects.size() + " Personas: ");
         int i = 1;
         while (objects.hasNext()){
             Persona p = objects.next();
             System.out.println((i++) + "\t: " + p.getNombre() + " " + p.getApellidos() + ", " + p.getEdad()
             + ", " + p.getDir().toString());
+        }
+
+        Objects<Direccion> objectsD = odb.getObjects(Direccion.class);
+        System.out.println("\n"+ objectsD.size() + " Direcciones: ");
+        int j = 1;
+        while (objectsD.hasNext()){
+            Direccion d = objectsD.next();
+            System.out.println((j++) + "\t: " + d.getCalle() + " " + d.getNumero() + ", " + d.getLocalidad());
         }
     }//1
 
@@ -134,7 +142,7 @@ public class Neo_Gand {
         for (Persona p : objects){
             Persona person = objects.next();
             OID oid = odb.getObjectId(p);
-            if (oid.getObjectId() == 4 ){
+            if (oid.getObjectId() == 18 ){
                 System.out.println("Modificando direccion...");
                 Direccion dir = person.getDir();
                 dir.setCalle("Calle Falsa");
@@ -228,7 +236,7 @@ public class Neo_Gand {
     private static void ejer10() {
         //Personas que viven en cada direccion
         Values valores = odb.getValues(new ValuesCriteriaQuery(Persona.class).field("nombre")
-                .field("apellidos").field("dir.localidad"));
+                .field("apellidos").groupBy("dir.localidad"));
         System.out.println("Personas que viven en cada localidad: ");
         while (valores.hasNext()){
             ObjectValues ov = valores.next();
@@ -238,11 +246,25 @@ public class Neo_Gand {
 
     private static void ejer11() {
         //Número de personas en cada calle
-        
+        Values valores = odb.getValues(new ValuesCriteriaQuery(Persona.class).field("nombre")
+                .field("apellidos").count("nombre").groupBy("dir.calle"));
+        System.out.println("Personas que viven en cada localidad: ");
+        while (valores.hasNext()){
+            ObjectValues ov = valores.next();
+            System.out.println(ov.getByIndex(0) + " " + ov.getByIndex(1) + ", " + ov.getByIndex(2));
+        }
     }//11
 
     private static void ejer12() {
+        //Cuántas personas no tienen calle o localidad.
+        ICriterion criteio = Where.and().add(Where.isNull("dir.calle")).add(Where.isNull("dir.localidad"));
+        Objects<Persona> objects = odb.getObjects(new CriteriaQuery(Persona.class, criteio));
 
+        if (objects.size() == 0 ){
+            System.out.println("No hay campos nulos");
+        }else {
+            System.out.println("Hay " + objects.size() + " calle o localidad nulos");
+        }
     }//12
 
 }//Fin Neo_Gand
